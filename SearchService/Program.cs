@@ -1,6 +1,8 @@
 using Serilog;
 using SearchService.Infrastructure;
 using SearchService.Services;
+using SearchService.Consumers;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +37,34 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
+    });
+});
+
+// Configure MassTransit with RabbitMQ
+builder.Services.AddMassTransit(x =>
+{
+    // Add consumers
+    x.AddConsumer<OfferCreatedConsumer>();
+    x.AddConsumer<OfferUpdatedConsumer>();
+    x.AddConsumer<PurchaseCreatedConsumer>();
+    x.AddConsumer<PurchaseUpdatedConsumer>();
+    x.AddConsumer<TransportCreatedConsumer>();
+    x.AddConsumer<TransportUpdatedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitMqHost = builder.Configuration.GetValue<string>("RabbitMQ:Host") ?? "localhost";
+        var rabbitMqPort = builder.Configuration.GetValue<int>("RabbitMQ:Port");
+        var username = builder.Configuration.GetValue<string>("RabbitMQ:Username") ?? "guest";
+        var password = builder.Configuration.GetValue<string>("RabbitMQ:Password") ?? "guest";
+
+        cfg.Host(rabbitMqHost, rabbitMqPort > 0 ? (ushort)rabbitMqPort : (ushort)5672, "/", h =>
+        {
+            h.Username(username);
+            h.Password(password);
+        });
+
+        cfg.ConfigureEndpoints(context);
     });
 });
 
@@ -79,6 +109,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapHealthChecks("/health");
+
+// Add simple health endpoint for Docker
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 Log.Information("Search Service starting...");
 
