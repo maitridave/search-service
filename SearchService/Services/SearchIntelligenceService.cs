@@ -10,9 +10,9 @@ namespace SearchService.Services;
 public interface ISearchIntelligenceService
 {
     Task<SearchResultResponse<object>> UnifiedSearchAsync(SearchQuery request);
-    Task<SearchResultResponse<OfferEntity>> SearchOffersAsync(SearchQuery request);
-    Task<SearchResultResponse<PurchaseEntity>> SearchPurchasesAsync(SearchQuery request);
-    Task<SearchResultResponse<TransportEntity>> SearchTransportsAsync(SearchQuery request);
+    // Task<SearchResultResponse<OfferEntity>> SearchOffersAsync(SearchQuery request);
+    // Task<SearchResultResponse<PurchaseEntity>> SearchPurchasesAsync(SearchQuery request);
+    // Task<SearchResultResponse<TransportEntity>> SearchTransportsAsync(SearchQuery request);
     Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request);
 }
 
@@ -111,32 +111,32 @@ public class SearchIntelligenceService : ISearchIntelligenceService
         }
     }
 
-    public async Task<SearchResultResponse<OfferEntity>> SearchOffersAsync(SearchQuery request)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        var result = await SearchOffersInternalAsync(request);
-        stopwatch.Stop();
-        result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-        return result;
-    }
-
-    public async Task<SearchResultResponse<PurchaseEntity>> SearchPurchasesAsync(SearchQuery request)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        var result = await SearchPurchasesInternalAsync(request);
-        stopwatch.Stop();
-        result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-        return result;
-    }
-
-    public async Task<SearchResultResponse<TransportEntity>> SearchTransportsAsync(SearchQuery request)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        var result = await SearchTransportsInternalAsync(request);
-        stopwatch.Stop();
-        result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-        return result;
-    }
+    // public async Task<SearchResultResponse<OfferEntity>> SearchOffersAsync(SearchQuery request)
+    // {
+    //     var stopwatch = Stopwatch.StartNew();
+    //     var result = await SearchOffersInternalAsync(request);
+    //     stopwatch.Stop();
+    //     result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+    //     return result;
+    // }
+    //
+    // public async Task<SearchResultResponse<PurchaseEntity>> SearchPurchasesAsync(SearchQuery request)
+    // {
+    //     var stopwatch = Stopwatch.StartNew();
+    //     var result = await SearchPurchasesInternalAsync(request);
+    //     stopwatch.Stop();
+    //     result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+    //     return result;
+    // }
+    //
+    // public async Task<SearchResultResponse<TransportEntity>> SearchTransportsAsync(SearchQuery request)
+    // {
+    //     var stopwatch = Stopwatch.StartNew();
+    //     var result = await SearchTransportsInternalAsync(request);
+    //     stopwatch.Stop();
+    //     result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+    //     return result;
+    // }
 
     public async Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request)
     {

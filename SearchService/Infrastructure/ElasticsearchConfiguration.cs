@@ -8,7 +8,7 @@ public class ElasticsearchConfiguration
     public static IElasticClient CreateClient(IConfiguration configuration)
     {
         var uri = configuration["Elasticsearch:Uri"] ?? "http://localhost:9200";
-        var defaultIndex = configuration["Elasticsearch:DefaultIndex"] ?? "search-service";
+        var defaultIndex = "automotive_search";
         
         var pool = new SingleNodeConnectionPool(new Uri(uri));
         var connectionSettings = new ConnectionSettings(pool)
@@ -32,123 +32,64 @@ public class ElasticsearchConfiguration
                 }
             });
 
-        // Register index mappings
-        connectionSettings.DefaultMappingFor<Models.EntityModels.OfferEntity>(m => m
-            .IndexName("offers")
-            .IdProperty(p => p.OfferId)
-        );
-
-        connectionSettings.DefaultMappingFor<Models.EntityModels.PurchaseEntity>(m => m
-            .IndexName("purchases")
-            .IdProperty(p => p.PurchaseId)
-        );
-
-        connectionSettings.DefaultMappingFor<Models.EntityModels.TransportEntity>(m => m
-            .IndexName("transports")
-            .IdProperty(p => p.TransportId)
-        );
 
         return new ElasticClient(connectionSettings);
     }
 
     public static async Task CreateIndicesAsync(IElasticClient client)
     {
-        await CreateOfferIndexAsync(client);
-        await CreatePurchaseIndexAsync(client);
-        await CreateTransportIndexAsync(client);
+        await CreateAutomotiveSearchIndexAsync(client);
     }
 
-    private static async Task CreateOfferIndexAsync(IElasticClient client)
+    private static async Task CreateAutomotiveSearchIndexAsync(IElasticClient client)
     {
-        var indexName = "offers";
+        var indexName = "automotive_search";
         var existsResponse = await client.Indices.ExistsAsync(indexName);
 
         if (!existsResponse.Exists)
         {
             var createIndexResponse = await client.Indices.CreateAsync(indexName, c => c
                 .Settings(s => s
-                    .NumberOfShards(3)
+                    .NumberOfShards(4)
                     .NumberOfReplicas(1)
                     .Analysis(a => a
                         .Analyzers(an => an
                             .Custom("autocomplete_analyzer", ca => ca
-                                .Tokenizer("standard")
-                                .Filters("lowercase", "edge_ngram_filter")
-                            )
-                            .Custom("synonym_analyzer", sa => sa
-                                .Tokenizer("standard")
-                                .Filters("lowercase", "synonym_filter")
+                                .Tokenizer("autocomplete_tokenizer")
+                                .Filters("lowercase", "asciifolding")
                             )
                         )
-                        .TokenFilters(tf => tf
-                            .EdgeNGram("edge_ngram_filter", e => e
+                        .Tokenizers(t => t
+                            .EdgeNGram("autocomplete_tokenizer", e => e
                                 .MinGram(2)
-                                .MaxGram(20)
-                            )
-                            .Synonym("synonym_filter", sy => sy
-                                .Synonyms("car, vehicle, auto, automobile")
+                                .MaxGram(10)
+                                .TokenChars(TokenChar.Letter, TokenChar.Digit)
                             )
                         )
                     )
                 )
-                .Map<Models.EntityModels.OfferEntity>(m => m
-                    .AutoMap()
+                .Map(m => m
                     .Properties(p => p
-                        .Text(t => t.Name(n => n.Make).Analyzer("synonym_analyzer").Fields(f => f.Keyword(k => k.Name("keyword"))))
-                        .Text(t => t.Name(n => n.Model).Analyzer("synonym_analyzer").Fields(f => f.Keyword(k => k.Name("keyword"))))
-                        .Number(n => n.Name(nn => nn.OfferAmount).Type(NumberType.ScaledFloat).ScalingFactor(100))
+                        .Number(n => n.Name("seller_id").Type(NumberType.Integer))
+                        .Number(n => n.Name("buyer_id").Type(NumberType.Integer))
+                        .Number(n => n.Name("carrier_id").Type(NumberType.Integer))
+                        .Number(n => n.Name("purchase_id").Type(NumberType.Integer))
+                        .Number(n => n.Name("transport_id").Type(NumberType.Integer))
+                        .Number(n => n.Name("offer_id").Type(NumberType.Integer))
+                        .Keyword(k => k.Name("vin"))
+                        .Text(t => t.Name("make").Analyzer("autocomplete_analyzer"))
+                        .Text(t => t.Name("model").Analyzer("autocomplete_analyzer"))
+                        .Text(t => t.Name("trim").Analyzer("autocomplete_analyzer"))
+                        .Number(n => n.Name("year").Type(NumberType.Integer))
+                        .Number(n => n.Name("offer_amount").Type(NumberType.Double))
+                        .Number(n => n.Name("bid_amount").Type(NumberType.Double))
+                        .Keyword(k => k.Name("offer_status"))
+                        .Keyword(k => k.Name("purchase_status"))
+                        .Keyword(k => k.Name("transport_status"))
+                        .Text(t => t.Name("city").Analyzer("autocomplete_analyzer"))
+                        .Keyword(k => k.Name("state"))
+                        .Text(t => t.Name("search_text").Analyzer("autocomplete_analyzer"))
                     )
-                )
-            );
-
-            if (!createIndexResponse.IsValid)
-            {
-                throw new Exception($"Failed to create index {indexName}: {createIndexResponse.DebugInformation}");
-            }
-        }
-    }
-
-    private static async Task CreatePurchaseIndexAsync(IElasticClient client)
-    {
-        var indexName = "purchases";
-        var existsResponse = await client.Indices.ExistsAsync(indexName);
-
-        if (!existsResponse.Exists)
-        {
-            var createIndexResponse = await client.Indices.CreateAsync(indexName, c => c
-                .Settings(s => s
-                    .NumberOfShards(3)
-                    .NumberOfReplicas(1)
-                )
-                .Map<Models.EntityModels.PurchaseEntity>(m => m
-                    .AutoMap()
-                    .Properties(p => p
-                        .Number(n => n.Name(nn => nn.Amount).Type(NumberType.ScaledFloat).ScalingFactor(100))
-                    )
-                )
-            );
-
-            if (!createIndexResponse.IsValid)
-            {
-                throw new Exception($"Failed to create index {indexName}: {createIndexResponse.DebugInformation}");
-            }
-        }
-    }
-
-    private static async Task CreateTransportIndexAsync(IElasticClient client)
-    {
-        var indexName = "transports";
-        var existsResponse = await client.Indices.ExistsAsync(indexName);
-
-        if (!existsResponse.Exists)
-        {
-            var createIndexResponse = await client.Indices.CreateAsync(indexName, c => c
-                .Settings(s => s
-                    .NumberOfShards(3)
-                    .NumberOfReplicas(1)
-                )
-                .Map<Models.EntityModels.TransportEntity>(m => m
-                    .AutoMap()
                 )
             );
 
