@@ -261,16 +261,38 @@ GET /api/search/unified?query=Toyota&userRole=agent&userId=AGENT-001
 
 ## 🛠️ Development
 
+### Open in Visual Studio / Rider
+
+```bash
+# Open the solution file in Visual Studio or JetBrains Rider
+SearchService.sln
+```
+
+Or from command line:
+```bash
+# Open with Visual Studio (Windows)
+start SearchService.sln
+
+# Open with Rider (cross-platform)
+rider SearchService.sln
+
+# Or just navigate to the directory and double-click SearchService.sln
+```
+
 ### Local Development Setup
 
 ```bash
 # Start only Elasticsearch and RabbitMQ
 docker-compose up -d elasticsearch rabbitmq kibana
 
-# Run the Search Service locally
+# Run the Search Service locally (via CLI)
 cd SearchService
 dotnet restore
 dotnet run
+
+# Or build and run the entire solution
+dotnet build SearchService.sln
+dotnet run --project SearchService/SearchService.csproj
 ```
 
 ### Project Structure
@@ -303,14 +325,17 @@ SearchService/
 ### Build & Test
 
 ```bash
-# Build the project
-dotnet build
+# Build the solution
+dotnet build SearchService.sln
+
+# Build a specific project
+dotnet build SearchService/SearchService.csproj
 
 # Run tests (if available)
-dotnet test
+dotnet test SearchService.sln
 
 # Publish for production
-dotnet publish -c Release
+dotnet publish SearchService.sln -c Release
 ```
 
 ## 📝 Configuration

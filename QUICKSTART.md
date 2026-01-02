@@ -7,8 +7,11 @@ This guide will help you get the Search Service up and running in minutes.
 - Docker & Docker Compose installed
 - Python 3.8+ (for test data generation)
 - 4GB+ RAM available for Docker
+- **For local development:** [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and Visual Studio / Rider
 
-## Step 1: Start All Services
+## Option A: Run with Docker (Recommended for Quick Start)
+
+### Step 1: Start All Services
 
 ```bash
 # Clone the repository (if not already done)
@@ -102,6 +105,56 @@ GET offers/_search
   }
 }
 ```
+
+---
+
+## Option B: Run Locally with Visual Studio / Rider
+
+### Step 1: Open Solution
+
+```bash
+# Clone the repository
+git clone https://github.com/maitridave/search-service.git
+cd search-service
+
+# Open the solution file
+# - Double-click SearchService.sln, or
+# - From Visual Studio: File > Open > Project/Solution > select SearchService.sln
+# - From Rider: Open SearchService.sln
+```
+
+### Step 2: Start Dependencies
+
+```bash
+# Start only Elasticsearch, Kibana, and RabbitMQ (not the search service)
+docker-compose up -d elasticsearch rabbitmq kibana
+
+# Wait for services to be ready (30-60 seconds)
+docker-compose ps
+```
+
+### Step 3: Run from IDE
+
+**Visual Studio:**
+1. Set `SearchService` as the startup project
+2. Press F5 or click "Start Debugging"
+3. The service will start on http://localhost:5000
+
+**Rider:**
+1. Select `SearchService` run configuration
+2. Click the Run button or press Shift+F10
+3. The service will start on http://localhost:5000
+
+**Or via Command Line:**
+```bash
+dotnet run --project SearchService/SearchService.csproj
+```
+
+### Step 4: Generate Test Data & Test
+
+Follow Steps 3-5 from Option A above to generate data and test the service.
+
+---
 
 ## Common Search Examples
 
