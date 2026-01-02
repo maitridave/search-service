@@ -14,11 +14,9 @@ public class OfferEntity
     public string VIN { get; set; } = string.Empty;
 
     [Text(Analyzer = "standard")]
-    [Keyword(Name = "keyword")]
     public string Make { get; set; } = string.Empty;
 
     [Text(Analyzer = "standard")]
-    [Keyword(Name = "keyword")]
     public string Model { get; set; } = string.Empty;
 
     [Number]

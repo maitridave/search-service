@@ -49,21 +49,13 @@ builder.Services.AddScoped<ISecurityService, SecurityService>();
 builder.Services.AddScoped<IIndexingService, IndexingService>();
 
 // Add health checks
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<SearchService.HealthChecks.ElasticsearchHealthCheck>("elasticsearch");
 
 var app = builder.Build();
 
-// Initialize Elasticsearch indices
-try
-{
-    Log.Information("Initializing Elasticsearch indices...");
-    await ElasticsearchConfiguration.CreateIndicesAsync(elasticClient);
-    Log.Information("Elasticsearch indices initialized successfully");
-}
-catch (Exception ex)
-{
-    Log.Error(ex, "Failed to initialize Elasticsearch indices");
-}
+// Initialize Elasticsearch indices with retry logic
+await InitializeElasticsearchWithRetry(elasticClient);
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -102,3 +94,44 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+static async Task InitializeElasticsearchWithRetry(Nest.IElasticClient elasticClient, int maxRetries = 10, int delaySeconds = 5)
+{
+    var attempt = 0;
+    
+    while (attempt < maxRetries)
+    {
+        try
+        {
+            Log.Information("Initializing Elasticsearch indices... (Attempt {Attempt}/{MaxRetries})", attempt + 1, maxRetries);
+            
+            // First, check if Elasticsearch is responding
+            var pingResponse = await elasticClient.PingAsync();
+            if (!pingResponse.IsValid)
+            {
+                throw new Exception("Elasticsearch is not responding to ping");
+            }
+            
+            // Now create indices
+            await ElasticsearchConfiguration.CreateIndicesAsync(elasticClient);
+            Log.Information("Elasticsearch indices initialized successfully");
+            return; // Success, exit the retry loop
+        }
+        catch (Exception ex)
+        {
+            attempt++;
+            Log.Warning(ex, "Failed to initialize Elasticsearch indices (Attempt {Attempt}/{MaxRetries}). " +
+                           "Retrying in {DelaySeconds} seconds...", attempt, maxRetries, delaySeconds);
+            
+            if (attempt >= maxRetries)
+            {
+                Log.Error(ex, "Failed to initialize Elasticsearch indices after {MaxRetries} attempts. " +
+                             "The application will continue but search functionality may not work properly.", maxRetries);
+                return;
+            }
+            
+            await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+        }
+    }
+}
+

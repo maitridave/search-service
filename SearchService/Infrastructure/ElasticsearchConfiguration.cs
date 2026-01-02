@@ -16,8 +16,14 @@ public class ElasticsearchConfiguration
             .EnableApiVersioningHeader()
             .DisableDirectStreaming()
             .PrettyJson()
-            .RequestTimeout(TimeSpan.FromSeconds(30))
-            .MaximumRetries(3)
+            .RequestTimeout(TimeSpan.FromSeconds(60))
+            .MaximumRetries(5)
+            .MaxRetryTimeout(TimeSpan.FromSeconds(120))
+            .DeadTimeout(TimeSpan.FromSeconds(60))
+            .PingTimeout(TimeSpan.FromSeconds(30))
+            .SniffOnConnectionFault(false)
+            .SniffOnStartup(false)
+            .ThrowExceptions(false) // Don't throw exceptions, let us handle them
             .OnRequestCompleted(details =>
             {
                 if (details.DebugInformation != null)
@@ -88,18 +94,9 @@ public class ElasticsearchConfiguration
                 .Map<Models.EntityModels.OfferEntity>(m => m
                     .AutoMap()
                     .Properties(p => p
-                        .Keyword(k => k.Name(n => n.OfferId))
-                        .Keyword(k => k.Name(n => n.SellerId))
-                        .Keyword(k => k.Name(n => n.VIN))
                         .Text(t => t.Name(n => n.Make).Analyzer("synonym_analyzer").Fields(f => f.Keyword(k => k.Name("keyword"))))
                         .Text(t => t.Name(n => n.Model).Analyzer("synonym_analyzer").Fields(f => f.Keyword(k => k.Name("keyword"))))
-                        .Number(n => n.Name(nn => nn.Year).Type(NumberType.Integer))
                         .Number(n => n.Name(nn => nn.OfferAmount).Type(NumberType.ScaledFloat).ScalingFactor(100))
-                        .Keyword(k => k.Name(n => n.Condition))
-                        .Keyword(k => k.Name(n => n.Status))
-                        .Date(d => d.Name(n => n.CreatedAt))
-                        .Date(d => d.Name(n => n.UpdatedAt))
-                        .Completion(co => co.Name(n => n.Suggest))
                     )
                 )
             );
@@ -126,16 +123,7 @@ public class ElasticsearchConfiguration
                 .Map<Models.EntityModels.PurchaseEntity>(m => m
                     .AutoMap()
                     .Properties(p => p
-                        .Keyword(k => k.Name(n => n.PurchaseId))
-                        .Keyword(k => k.Name(n => n.BuyerId))
-                        .Keyword(k => k.Name(n => n.OfferId))
-                        .Date(d => d.Name(n => n.PurchaseDate))
                         .Number(n => n.Name(nn => nn.Amount).Type(NumberType.ScaledFloat).ScalingFactor(100))
-                        .Keyword(k => k.Name(n => n.Status))
-                        .Keyword(k => k.Name(n => n.PaymentMethod))
-                        .Date(d => d.Name(n => n.CreatedAt))
-                        .Date(d => d.Name(n => n.UpdatedAt))
-                        .Completion(co => co.Name(n => n.Suggest))
                     )
                 )
             );
@@ -161,20 +149,6 @@ public class ElasticsearchConfiguration
                 )
                 .Map<Models.EntityModels.TransportEntity>(m => m
                     .AutoMap()
-                    .Properties(p => p
-                        .Keyword(k => k.Name(n => n.TransportId))
-                        .Keyword(k => k.Name(n => n.CarrierId))
-                        .Keyword(k => k.Name(n => n.PurchaseId))
-                        .Text(t => t.Name(n => n.PickupLocation))
-                        .Text(t => t.Name(n => n.DeliveryLocation))
-                        .Date(d => d.Name(n => n.ScheduleDate))
-                        .Date(d => d.Name(n => n.ActualPickupDate))
-                        .Date(d => d.Name(n => n.ExpectedDeliveryDate))
-                        .Keyword(k => k.Name(n => n.Status))
-                        .Date(d => d.Name(n => n.CreatedAt))
-                        .Date(d => d.Name(n => n.UpdatedAt))
-                        .Completion(co => co.Name(n => n.Suggest))
-                    )
                 )
             );
 
