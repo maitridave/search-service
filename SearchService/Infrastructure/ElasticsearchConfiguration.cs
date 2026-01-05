@@ -30,7 +30,11 @@ public class ElasticsearchConfiguration
                 {
                     Console.WriteLine($"Elasticsearch request: {details.DebugInformation}");
                 }
-            });
+            })
+            .DefaultMappingFor<Models.Documents.AutomotiveSearchDocument>(m => m
+                .IndexName(defaultIndex)
+                .IdProperty(p => p.DocumentId)
+            );
 
 
         return new ElasticClient(connectionSettings);

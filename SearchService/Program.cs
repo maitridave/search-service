@@ -48,6 +48,12 @@ builder.Services.AddScoped<ISearchIntelligenceService, SearchIntelligenceService
 builder.Services.AddScoped<ISecurityService, SecurityService>();
 builder.Services.AddScoped<IIndexingService, IndexingService>();
 
+// Register event handling services
+builder.Services.AddSingleton<SearchService.EventHandlers.IEventPublisher, SearchService.EventHandlers.EventPublisher>();
+
+// Register the event consumer as a hosted service
+builder.Services.AddHostedService<SearchService.EventHandlers.EventConsumerService>();
+
 // Add health checks
 builder.Services.AddHealthChecks()
     .AddCheck<SearchService.HealthChecks.ElasticsearchHealthCheck>("elasticsearch");

@@ -18,57 +18,36 @@ public class SearchController : ControllerBase
     }
 
     /// <summary>
-    /// Universal search across all entity types with optional aggregations
+    /// Universal search API that handles both full search and autocomplete functionality
     /// </summary>
-    [HttpGet("unified")]
-    public async Task<IActionResult> UnifiedSearch([FromQuery] SearchQuery request)
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] SearchQuery request)
     {
         try
         {
+            // If it's an autocomplete request (typically short query with high page size limit)
+            if (request.IsAutocomplete || (!string.IsNullOrEmpty(request.Query) && request.Query.Length <= 3 && request.PageSize > 20))
+            {
+                // Convert to autocomplete request
+                var autocompleteRequest = new AutocompleteRequest
+                {
+                    Term = request.Query,
+                    MaxResults = request.PageSize > 0 ? request.PageSize : 10,
+                    UserId = request.UserId,
+                    UserRole = request.UserRole
+                };
+                
+                var autocompleteResult = await _searchService.AutocompleteAsync(autocompleteRequest);
+                return Ok(autocompleteResult);
+            }
+            
+            // Regular unified search
             var result = await _searchService.UnifiedSearchAsync(request);
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error performing unified search");
-            return StatusCode(500, new { error = "Internal server error" });
-        }
-    }
-
-    // /// <summary>
-    // /// Get aggregated facets for filtering from unified index
-    // /// </summary>
-    // [HttpGet("aggregations")]
-    // public async Task<IActionResult> GetAggregations([FromQuery] SearchQuery request)
-    // {
-    //     try
-    //     {
-    //         // Set page size to 0 to only get aggregations
-    //         request.PageSize = 0;
-    //         var result = await _searchService.UnifiedSearchAsync(request);
-    //         return Ok(new { facets = result.Facets });
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _logger.LogError(ex, "Error getting aggregations");
-    //         return StatusCode(500, new { error = "Internal server error" });
-    //     }
-    // }
-
-    /// <summary>
-    /// Autocomplete suggestions from unified index
-    /// </summary>
-    [HttpGet("autocomplete")]
-    public async Task<IActionResult> Autocomplete([FromQuery] AutocompleteRequest request)
-    {
-        try
-        {
-            var result = await _searchService.AutocompleteAsync(request);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting autocomplete suggestions");
+            _logger.LogError(ex, "Error performing search");
             return StatusCode(500, new { error = "Internal server error" });
         }
     }

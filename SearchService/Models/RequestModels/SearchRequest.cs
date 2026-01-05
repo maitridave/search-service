@@ -12,13 +12,18 @@ public class SearchQuery
     public bool EnableFuzzy { get; set; } = true;
     public int FuzzinessLevel { get; set; } = 1;
     public bool EnableHighlighting { get; set; } = true;
+    public bool IsAutocomplete { get; set; } = false;
 }
 
 public class AutocompleteRequest
 {
+    public string Term { get; set; } = string.Empty;
     public string Query { get; set; } = string.Empty;
     public string EntityType { get; set; } = string.Empty;
+    public int MaxResults { get; set; } = 5;
     public int Size { get; set; } = 5;
+    public string UserId { get; set; } = string.Empty;
+    public string UserRole { get; set; } = string.Empty;
 }
 
 public class BulkIndexRequest
